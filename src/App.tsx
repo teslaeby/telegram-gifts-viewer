@@ -33,7 +33,7 @@ function App() {
           });
 
           // Запрашиваем реальные подарки с backend
-          const resp = await fetch(`http://127.0.0.1:8004/gifts?username=${user.username}`);
+          const resp = await fetch(`https://olive-tigers-pick.loca.lt/gifts?username=${user.username}`);
           const data = await resp.json();
           if (data.gifts) {
             setGifts(data.gifts);
