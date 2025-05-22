@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import WebApp from '@twa-dev/sdk';
 
 interface Gift {
-  id: number;
+  count: number;
   name: string;
-  stars: number;
-  image: string;
+  price_ton: string;
 }
 
 interface UserData {
@@ -22,10 +21,8 @@ function App() {
   const [userData, setUserData] = useState<UserData | null>(null);
 
   useEffect(() => {
-    // Инициализация Telegram WebApp
     const initTelegramApp = async () => {
       try {
-        // Получаем данные пользователя
         const user = WebApp.initDataUnsafe.user;
         if (user) {
           setUserData({
@@ -34,38 +31,29 @@ function App() {
             first_name: user.first_name,
             last_name: user.last_name
           });
-        }
 
-        // Здесь будет реальный запрос к API Telegram для получения подарков
-        // Для MVP используем моковые данные
-        const mockGifts: Gift[] = [
-          {
-            id: 1,
-            name: "Birthday Gift",
-            stars: 100,
-            image: "🎁"
-          },
-          {
-            id: 2,
-            name: "Special Gift",
-            stars: 200,
-            image: "🎀"
+          // Запрашиваем реальные подарки с backend
+          const resp = await fetch(`http://127.0.0.1:8004/gifts?username=${user.username}`);
+          const data = await resp.json();
+          if (data.gifts) {
+            setGifts(data.gifts);
+          } else {
+            setError('Не удалось получить подарки');
           }
-        ];
-        
-        setGifts(mockGifts);
-        setLoading(false);
+        } else {
+          setError('Не удалось получить данные пользователя');
+        }
       } catch (err) {
-        setError('Failed to initialize app');
+        setError('Ошибка загрузки подарков');
+      } finally {
         setLoading(false);
       }
     };
-
     initTelegramApp();
   }, []);
 
   if (loading) {
-    return <div className="loading">Loading gifts...</div>;
+    return <div className="loading">Загрузка подарков...</div>;
   }
 
   if (error) {
@@ -76,20 +64,24 @@ function App() {
     <div className="app">
       {userData && (
         <div className="user-info">
-          <h2>Welcome, {userData.first_name}!</h2>
+          <h2>Добро пожаловать, {userData.first_name}!</h2>
           {userData.username && <p>@{userData.username}</p>}
         </div>
       )}
-      <h1>My Telegram Gifts</h1>
-      <div className="gifts-grid">
-        {gifts.map((gift) => (
-          <div key={gift.id} className="gift-card">
-            <div className="gift-image">{gift.image}</div>
-            <div className="gift-name">{gift.name}</div>
-            <div className="gift-stars">⭐ {gift.stars}</div>
-          </div>
-        ))}
-      </div>
+      <h1>Мои Telegram подарки</h1>
+      {gifts.length === 0 ? (
+        <div className="error">Подарков не найдено</div>
+      ) : (
+        <div className="gifts-grid">
+          {gifts.map((gift, idx) => (
+            <div key={idx} className="gift-card">
+              <div className="gift-name">{gift.name}</div>
+              <div className="gift-stars">Цена: <b>{gift.price_ton}</b> TON</div>
+              <div className="gift-count">Количество: {gift.count}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
